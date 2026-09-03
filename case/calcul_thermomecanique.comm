@@ -1,0 +1,103 @@
+# Fichier de démarrage Code_Aster — à vérifier avec la version utilisée.
+# Unités cohérentes : m, s, kg, K/°C, Pa, W.
+
+DEBUT(LANG='FR')
+
+maillage = LIRE_MAILLAGE(FORMAT='MED', UNITE=20)
+
+modele_th = AFFE_MODELE(
+    MAILLAGE=maillage,
+    AFFE=_F(TOUT='OUI', PHENOMENE='THERMIQUE', MODELISATION='AXIS'),
+)
+
+modele_meca = AFFE_MODELE(
+    MAILLAGE=maillage,
+    AFFE=_F(TOUT='OUI', PHENOMENE='MECANIQUE', MODELISATION='AXIS'),
+)
+
+acier = DEFI_MATERIAU(
+    THER=_F(LAMBDA=40.0, RHO_CP=3.8E6),
+    ELAS=_F(E=2.0E11, NU=0.30, ALPHA=1.2E-5),
+)
+
+temps = DEFI_LIST_REEL(
+    DEBUT=0.0,
+    INTERVALLE=(
+        _F(JUSQU_A=30.0, NOMBRE=30),
+        _F(JUSQU_A=300.0, NOMBRE=54),
+    ),
+)
+
+temperature_fluide = DEFI_FONCTION(
+    NOM_PARA='INST',
+    VALE=(0.0, 300.0, 30.0, 50.0, 300.0, 50.0),
+    PROL_DROITE='CONSTANT',
+    PROL_GAUCHE='CONSTANT',
+)
+
+materiau_th = AFFE_MATERIAU(
+    MAILLAGE=maillage,
+    AFFE=_F(TOUT='OUI', MATER=acier),
+)
+
+chargement_th = AFFE_CHAR_THER_F(
+    MODELE=modele_th,
+    ECHANGE=_F(
+        GROUP_MA='PAROI_INT',
+        COEF_H=1.0E4,
+        TEMP_EXT=temperature_fluide,
+    ),
+)
+
+temperature_initiale = CREA_CHAMP(
+    TYPE_CHAM='NOEU_TEMP_R',
+    OPERATION='AFFE',
+    MAILLAGE=maillage,
+    AFFE=_F(TOUT='OUI', NOM_CMP='TEMP', VALE=300.0),
+)
+
+resultat_th = THER_LINEAIRE(
+    MODELE=modele_th,
+    CHAM_MATER=materiau_th,
+    EXCIT=_F(CHARGE=chargement_th),
+    INCREMENT=_F(LIST_INST=temps),
+    ETAT_INIT=_F(CHAM_NO=temperature_initiale),
+)
+
+materiau_meca = AFFE_MATERIAU(
+    MAILLAGE=maillage,
+    AFFE=_F(TOUT='OUI', MATER=acier),
+    AFFE_VARC=_F(NOM_VARC='TEMP', EVOL=resultat_th, VALE_REF=300.0),
+)
+
+blocage = AFFE_CHAR_MECA(
+    MODELE=modele_meca,
+    DDL_IMPO=_F(GROUP_MA='BAS', DY=0.0),
+    PRES_REP=_F(GROUP_MA='PAROI_INT', PRES=15.5E6),
+)
+
+resultat_meca = MECA_STATIQUE(
+    MODELE=modele_meca,
+    CHAM_MATER=materiau_meca,
+    EXCIT=_F(CHARGE=blocage),
+    LIST_INST=temps,
+)
+
+resultat_meca = CALC_CHAMP(
+    reuse=resultat_meca,
+    RESULTAT=resultat_meca,
+    CONTRAINTE=('SIGM_ELNO', 'SIGM_NOEU'),
+    CRITERES=('SIEQ_ELNO', 'SIEQ_NOEU'),
+)
+
+IMPR_RESU(
+    FORMAT='MED',
+    UNITE=80,
+    RESU=(
+        _F(RESULTAT=resultat_th, NOM_CHAM='TEMP'),
+        _F(RESULTAT=resultat_meca),
+    ),
+)
+
+FIN()
+
