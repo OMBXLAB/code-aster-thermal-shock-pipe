@@ -1,51 +1,54 @@
-# Hypothèses de modélisation
+# Préparation de la modélisation
 
-## Géométrie
+Ce document rassemble les choix qui devront être définis et justifiés avant la
+création du modèle dans Salome-Meca. Les hypothèses ci-dessous ne sont pas
+encore figées.
 
-La tuyauterie droite est représentée par sa section méridienne dans le plan
-$(r,z)$. L’hypothèse axisymétrique permet de réduire le modèle 3D à un domaine
-rectangulaire correspondant à la paroi.
+## Géométrie à définir
 
-## Hypothèses thermiques
+- dimensions génériques de la tuyauterie ;
+- longueur représentative du tronçon étudié ;
+- modèle axisymétrique ou tridimensionnel ;
+- influence éventuelle des effets d’extrémité.
 
-- matériau homogène et isotrope ;
-- température initiale uniforme ;
-- convection imposée sur la paroi interne ;
-- paroi externe adiabatique dans la première version ;
-- absence de rayonnement et de source thermique volumique ;
-- propriétés constantes dans la première version, puis dépendantes de la
-  température dans une évolution ultérieure.
+Une formulation axisymétrique pourra être retenue si la géométrie, les
+conditions aux limites et les chargements sont invariants autour de l’axe.
 
-## Hypothèses mécaniques
+## Modèle thermique à définir
 
-- comportement élastique linéaire isotrope ;
-- petites déformations et petits déplacements ;
-- chargement axisymétrique ;
-- pression uniforme sur la paroi interne ;
-- blocage axial minimal destiné à supprimer les mouvements de corps rigide ;
-- absence initiale de plasticité, de fluage, de soudure et de défaut.
+- température initiale ;
+- évolution temporelle de la température du fluide interne ;
+- coefficient d’échange convectif interne ;
+- condition thermique appliquée à la paroi externe ;
+- conductivité, masse volumique et capacité thermique du matériau ;
+- dépendance éventuelle des propriétés à la température ;
+- durée du transitoire et discrétisation temporelle.
 
-## Chaînage thermomécanique
+## Modèle mécanique à définir
 
-Le calcul est séquentiel : le champ de température est d’abord obtenu sur tous
-les instants du transitoire, puis utilisé comme variable de commande du calcul
-mécanique. L’effet de la mécanique sur le problème thermique est négligé.
+- pression interne ;
+- module de Young, coefficient de Poisson et coefficient de dilatation ;
+- conditions aux limites nécessaires sans surcontraindre la structure ;
+- représentation ou non des effets de fond ;
+- comportement thermoélastique ou élastoplastique ;
+- dépendance éventuelle des propriétés à la température.
 
-## Groupes de maillage
+## Groupes à préparer dans Salome-Meca
 
-| Groupe | Fonction |
-|---|---|
-| `DOMAINE` | Paroi de la tuyauterie |
-| `PAROI_INT` | Convection et pression internes |
-| `PAROI_EXT` | Condition thermique externe |
-| `BAS` | Blocage axial minimal |
-| `HAUT` | Extrémité opposée |
+Les noms définitifs seront choisis lors de la construction de la géométrie et
+du maillage. Il faudra au minimum identifier :
 
-## Étapes d’évolution
+- le domaine matériel ;
+- la paroi intérieure ;
+- la paroi extérieure ;
+- les extrémités du tronçon ;
+- les lignes ou surfaces nécessaires à l’extraction des résultats.
 
-1. Propriétés thermiques et mécaniques constantes.
-2. Propriétés dépendantes de la température.
-3. Raffinement local et convergence temporelle.
-4. Comportement élastoplastique avec `STAT_NON_LINE` si nécessaire.
-5. Cycles répétés et étude exploratoire de fatigue thermique.
+## Chaînage envisagé
 
+Le calcul thermomécanique sera séquentiel : le champ de température transitoire
+sera d’abord calculé, vérifié et sauvegardé. Il sera ensuite utilisé comme
+variable de commande dans le calcul mécanique.
+
+Les commandes Code_Aster ne seront ajoutées au dépôt qu’après leur création et
+leur exécution dans AsterStudy.
